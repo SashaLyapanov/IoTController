@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  iotcontroller:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: iotcontroller:latest
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    networks:
+      iot:
+        aliases:
+          - iotcontroller
+
+  ruleengine:
+    build:
+      context: ../RuleEngine
+      dockerfile: Dockerfile
+    image: ruleengine:latest
+    ports:
+      - "8081:8081"
+    depends_on:
+      - rabbitmq
+      - mongodb
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    networks:
+      iot:
+        aliases:
+          - ruleengine
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      iot:
+        aliases:
+          - rabbitmq
+
+  mongodb:
+    image: mongo
+    ports:
+      - "27017:27017"
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    networks:
+      iot:
+        aliases:
+          - mongodb
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./config:/etc/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    networks:
+      iot:
+        aliases:
+            - prometheus
+    deploy:
+      replicas: 1
+
+  grafana:
+    image: grafana/grafana
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      iot:
+        aliases:
+            - grafana
+    deploy:
+      replicas: 1
+
+volumes:
+  rabbitmq_data:
+
+networks:
+  iot:
+    driver: overlay

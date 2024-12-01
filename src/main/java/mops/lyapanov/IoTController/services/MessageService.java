@@ -3,6 +3,7 @@ package mops.lyapanov.IoTController.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.annotation.Timed;
 import mops.lyapanov.IoTController.models.Message;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class MessageService {
         return mapper.readValue(json, new TypeReference<List<Message>>() {});
     }
 
+    @Timed(value = "my_service_serialization", description = "Time taken to execute my service")
     public String serializeMessage(Message message) throws JsonProcessingException {
         return mapper.writeValueAsString(message);
     }

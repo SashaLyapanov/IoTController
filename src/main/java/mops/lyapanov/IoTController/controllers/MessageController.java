@@ -3,6 +3,7 @@ package mops.lyapanov.IoTController.controllers;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import io.micrometer.core.annotation.Timed;
 import mops.lyapanov.IoTController.models.Message;
 import mops.lyapanov.IoTController.services.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +35,14 @@ public class MessageController {
 
     private final AtomicInteger counter = new AtomicInteger(0);
 
+//    @Counted(value = "my_service_sendMessage_requests", description = "Number of service request")
+    @Timed(value = "my_service_sendMessage_time", description = "Time taken to execute my service")
     @PostMapping("/sendMessage")
     public void gettingMessages(@RequestBody List<Message> messages) {
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("localhost");
+//        factory.setHost("localhost");
+//        factory.setHost("host.docker.internal");
+        factory.setHost("rabbitmq");
         try (Connection connection = factory.newConnection();
              Channel channel = connection.createChannel()) {
 
@@ -52,11 +57,8 @@ public class MessageController {
             for (Message message : messages) {
                 String jsonMessages = messageService.serializeMessage(message);
 
-//                String queueName = (counter.get() % 2 == 0) ? QUEUE1_NAME : QUEUE2_NAME;
-                String routingKey = (counter.get() % 2 == 0) ? ROUTING_KEY_1 : ROUTING_KEY_2;
-
-
-                channel.basicPublish(EXCHANGE_NAME, routingKey, null, jsonMessages.getBytes());
+                channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY_1, null, jsonMessages.getBytes());
+                channel.basicPublish(EXCHANGE_NAME, ROUTING_KEY_2, null, jsonMessages.getBytes());
                 System.out.println(" [x] Sent '" + jsonMessages + "'");
                 counter.getAndIncrement();
             }
