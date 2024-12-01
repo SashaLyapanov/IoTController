@@ -1,0 +1,14 @@
+scrape_configs:
+  - job_name: 'iotcontroller'
+    scrape_interval: 5s
+    static_configs:
+#      - targets: ['host.docker.internal:8080']
+      - targets:
+        - 'iotcontroller:8080'
+    metrics_path: '/actuator/prometheus'
+
+  - job_name: 'ruleengine'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['ruleengine:8081']
+    metrics_path: '/actuator/prometheus'
